@@ -42,6 +42,10 @@ namespace proj_crud.Delegates
         Console.WriteLine($"[Notificación] Usuario editado: {usuario.Nombre} {usuario.Apellido} - {DateTime.Now}");
 
 
+        public static Action<usuario> NotificarEdicion = usuario =>
+        Console.WriteLine($"[Notificación] Usuario editado: {usuario.Nombre} {usuario.Apellido} - {DateTime.Now}");
+
+
 
     }
 
