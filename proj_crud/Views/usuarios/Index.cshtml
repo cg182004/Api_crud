@@ -11,6 +11,8 @@
         @Html.ActionLink("➕ Crear Nuevo", "Create", null, new { @class = "btn btn-success" })
     </div>
 
+
+
     <table class="table table-bordered table-striped table-hover shadow-sm">
         <thead class="table-dark">
             <tr>
@@ -44,4 +46,26 @@
             }
         </tbody>
     </table>
+
+    @if (TempData["Notificacion"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Notificacion"]
+        </div>
+    }
+
+    @if (TempData["NotificacionEliminado"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["NotificacionEliminado"]
+        </div>
+    }
+    @if (TempData["NotificacionEditado"] != null)
+    {
+        <div class="alert alert-warning">
+            @TempData["NotificacionEditado"]
+        </div>
+    }
+
+
 </div>

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using proj_crud.Models;
+using proj_crud.Delegates; 
 
 namespace proj_crud.Controllers
 {
@@ -42,21 +42,50 @@ namespace proj_crud.Controllers
         }
 
         // POST: usuarios/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,dni,Nombre,Apellido,sexo,Contrasena,correo")] usuario usuario)
-        {
-            if (ModelState.IsValid)
-            {
-                db.usuarios.Add(usuario);
-                db.SaveChanges();
-                return RedirectToAction("Index");
-            }
+       public ActionResult Create([Bind(Include = "Id,dni,Nombre,Apellido,sexo,Contrasena,correo")] usuario usuario)
+{
+    var errores = UsuarioDelegates.ValidarUsuario(usuario);
 
-            return View(usuario);
+    if (errores.Any())
+    {
+        foreach (var error in errores)
+        {
+            ModelState.AddModelError("", error);
         }
+        return View(usuario);
+    }
+
+    if (ModelState.IsValid)
+    {
+        db.usuarios.Add(usuario);
+
+        try
+        {
+            db.SaveChanges();
+
+            TempData["Notificacion"] = $"Nuevo Usuario creado: {usuario.Nombre} {usuario.Apellido}";
+
+            UsuarioDelegates.NotificarCreacion(usuario);
+
+            return RedirectToAction("Index");
+        }
+        catch (Exception ex)
+        {
+            // Registrar o mostrar el error
+            ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
+
+            // Puedes también registrar los errores internos si necesitas más detalles:
+            if (ex.InnerException != null)
+            {
+                ModelState.AddModelError("", "Detalle interno: " + ex.InnerException.Message);
+            }
+        }
+    }
+
+    return View(usuario);
+}
 
         // GET: usuarios/Edit/5
         public ActionResult Edit(int? id)
@@ -74,8 +103,6 @@ namespace proj_crud.Controllers
         }
 
         // POST: usuarios/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for 
-        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Edit([Bind(Include = "Id,dni,Nombre,Apellido,sexo,Contrasena,correo")] usuario usuario)
@@ -84,6 +111,13 @@ namespace proj_crud.Controllers
             {
                 db.Entry(usuario).State = EntityState.Modified;
                 db.SaveChanges();
+
+              
+                UsuarioDelegates.NotificarEdicion(usuario);
+
+                TempData["Notificacion"] = $"Usuario editado: {usuario.Nombre} {usuario.Apellido}";
+
+
                 return RedirectToAction("Index");
             }
             return View(usuario);
@@ -109,9 +143,18 @@ namespace proj_crud.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(int id)
         {
+
+
             usuario usuario = db.usuarios.Find(id);
+
+            // Notificación por consola
+            UsuarioDelegates.NotificarEliminacion(usuario);
+
             db.usuarios.Remove(usuario);
             db.SaveChanges();
+
+            TempData["NotificacionEliminado"] = $"Usuario eliminado: {usuario.Nombre} {usuario.Apellido}";
+
             return RedirectToAction("Index");
         }
 
