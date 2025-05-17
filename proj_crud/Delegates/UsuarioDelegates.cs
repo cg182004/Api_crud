@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using proj_crud.Models; // Importa tu modelo
+using proj_crud.Models; 
 
 namespace proj_crud.Delegates
 {
@@ -23,7 +23,7 @@ namespace proj_crud.Delegates
             if (string.IsNullOrWhiteSpace(usuario.Contrasena) || usuario.Contrasena.Length < 6)
                 errores.Add("La contraseña debe tener al menos 6 caracteres.");
 
-            // Validación de correo (verifica si contiene un @ y un dominio)
+
             if (string.IsNullOrWhiteSpace(usuario.correo) || !usuario.correo.Contains("@") || !usuario.correo.Contains("."))
                 errores.Add("El correo electrónico no es válido.");
 
@@ -31,7 +31,7 @@ namespace proj_crud.Delegates
             return errores;
         };
 
-     
+
         public static Action<usuario> NotificarCreacion = usuario =>
             Console.WriteLine($"[Notificación] Nuevo Usuario creado: {usuario.Nombre} {usuario.Apellido} - {DateTime.Now}");
 
@@ -40,6 +40,9 @@ namespace proj_crud.Delegates
 
         public static Action<usuario> NotificarEdicion = usuario =>
         Console.WriteLine($"[Notificación] Usuario editado: {usuario.Nombre} {usuario.Apellido} - {DateTime.Now}");
+
+
+
 
 
 
