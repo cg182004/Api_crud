@@ -7,6 +7,7 @@ using System.Web;
 using System.Web.Mvc;
 using proj_crud.Models;
 using proj_crud.Delegates; 
+using proj_crud.Factories; 
 
 namespace proj_crud.Controllers
 {
@@ -41,51 +42,65 @@ namespace proj_crud.Controllers
             return View();
         }
 
-        // POST: usuarios/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-       public ActionResult Create([Bind(Include = "Id,dni,Nombre,Apellido,sexo,Contrasena,correo")] usuario usuario)
-{
-    var errores = UsuarioDelegates.ValidarUsuario(usuario);
-
-    if (errores.Any())
-    {
-        foreach (var error in errores)
+        public ActionResult Create(FormCollection form)
         {
-            ModelState.AddModelError("", error);
-        }
-        return View(usuario);
-    }
+            string dni = form["dni"];
+            string nombre = form["Nombre"];
+            string apellido = form["Apellido"];
+            string sexo = form["sexo"];
 
-    if (ModelState.IsValid)
-    {
-        db.usuarios.Add(usuario);
+            // Crear usuario normal con correo y contraseña generados automáticamente
+            usuario usuario = UsuarioFactory.CrearUsuarioNormal(dni, nombre, apellido, sexo);
 
-        try
-        {
-            db.SaveChanges();
+            // Validaciones personalizadas
+            var errores = UsuarioDelegates.ValidarUsuario(usuario);
 
-            TempData["Notificacion"] = $"Nuevo Usuario creado: {usuario.Nombre} {usuario.Apellido}";
-
-            UsuarioDelegates.NotificarCreacion(usuario);
-
-            return RedirectToAction("Index");
-        }
-        catch (Exception ex)
-        {
-            // Registrar o mostrar el error
-            ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
-
-            // Puedes también registrar los errores internos si necesitas más detalles:
-            if (ex.InnerException != null)
+            if (errores.Any())
             {
-                ModelState.AddModelError("", "Detalle interno: " + ex.InnerException.Message);
+                foreach (var error in errores)
+                {
+                    ModelState.AddModelError("", error);
+                }
+                return View(usuario);
             }
-        }
-    }
 
-    return View(usuario);
-}
+            if (ModelState.IsValid)
+            {
+                db.usuarios.Add(usuario);
+                try
+                {
+                    db.SaveChanges();
+                    TempData["Notificacion"] = $"Usuario creado: {usuario.Nombre} {usuario.Apellido}";
+                    UsuarioDelegates.NotificarCreacion(usuario);
+                    return RedirectToAction("Index");
+                }
+                catch (System.Data.Entity.Validation.DbEntityValidationException dbEx)
+                {
+                    foreach (var validationErrors in dbEx.EntityValidationErrors)
+                    {
+                        foreach (var validationError in validationErrors.ValidationErrors)
+                        {
+                            ModelState.AddModelError("", $"{validationError.PropertyName}: {validationError.ErrorMessage}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", "Error al guardar en la base de datos: " + ex.Message);
+                    if (ex.InnerException != null)
+                        ModelState.AddModelError("", "Detalle interno: " + ex.InnerException.Message);
+                }
+
+            }
+
+            return View(usuario);
+        }
+
+
+
+
 
         // GET: usuarios/Edit/5
         public ActionResult Edit(int? id)
